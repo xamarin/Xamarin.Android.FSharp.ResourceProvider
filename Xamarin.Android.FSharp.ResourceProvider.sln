@@ -1,0 +1,23 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "Xamarin.Android.FSharp.ResourceProvider", "Xamarin.Android.FSharp.ResourceProvider.fsproj", "{F0B64BEE-BBAA-4A11-94F8-DBE1A9C04D11}"
+EndProject
+Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "Xamarin.Android.FSharp.ResourceProvider.Runtime", "Runtime\Xamarin.Android.FSharp.ResourceProvider.Runtime.fsproj", "{8307D8BE-EFF7-459D-900D-8D2D83C7653B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F0B64BEE-BBAA-4A11-94F8-DBE1A9C04D11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0B64BEE-BBAA-4A11-94F8-DBE1A9C04D11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0B64BEE-BBAA-4A11-94F8-DBE1A9C04D11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0B64BEE-BBAA-4A11-94F8-DBE1A9C04D11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8307D8BE-EFF7-459D-900D-8D2D83C7653B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8307D8BE-EFF7-459D-900D-8D2D83C7653B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8307D8BE-EFF7-459D-900D-8D2D83C7653B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8307D8BE-EFF7-459D-900D-8D2D83C7653B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
