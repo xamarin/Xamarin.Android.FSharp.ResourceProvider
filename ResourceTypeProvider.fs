@@ -13,13 +13,14 @@ open Microsoft.FSharp.Core.CompilerServices
 [<TypeProvider>]
 type ResourceProvider(config : TypeProviderConfig) =
     let mutable providedAssembly = None
-    let invalidate = Event<EventHandler,EventArgs>()
+    let invalidateEvent = Event<EventHandler,EventArgs>()
 
     let compiler = new CSharpCodeProvider()
-    let pathToDesigner = Path.Combine(config.ResolutionFolder, "Resources")
-
+    let (/) a b = Path.Combine(a,b)
+    let pathToResources = config.ResolutionFolder/"Resources"
+    let resourceFileName = pathToResources/"Resource.designer.cs"
     // watcher doesn't trigger when I specify the filename exactly
-    let watcher = new FileSystemWatcher(pathToDesigner, "*.fs", EnableRaisingEvents=true)
+    let watcher = new FileSystemWatcher(pathToResources, "*.cs", EnableRaisingEvents=true)
 
 
     let generate sourceCode =
@@ -91,9 +92,13 @@ type ResourceProvider(config : TypeProviderConfig) =
             |> Seq.toArray
         providedAssembly <- Some(File.ReadAllBytes(result.PathToAssembly), namespaces)    
 
+    let invalidate _ =
+        printfn "Invalidating resources"
+        invalidateEvent.Trigger(null, null)
+
     do
-        watcher.Changed.Add(fun _ -> printfn "Invalidating resources"; invalidate.Trigger(null, null))
-        let source = File.ReadAllText(Path.Combine(pathToDesigner, "Resource.designer.fs"))
+        watcher.Changed.Add invalidate
+        watcher.Created.Add invalidate
 
         AppDomain.CurrentDomain.add_ReflectionOnlyAssemblyResolve(fun _ args ->
             let name = AssemblyName(args.Name)
@@ -108,11 +113,22 @@ type ResourceProvider(config : TypeProviderConfig) =
                 | None -> null
             asm)
 
+        let source =
+            if File.Exists resourceFileName then
+                File.ReadAllText resourceFileName
+            else
+                let asm = Assembly.GetExecutingAssembly()
+                let resourceNames = asm.GetManifestResourceNames()
+                use stream = asm.GetManifestResourceStream("Resource.designer.cs")
+                use reader = new StreamReader(stream)
+                let source = reader.ReadToEnd()
+                let namespc = (new DirectoryInfo(config.ResolutionFolder)).Name
+                source.Replace("${Namespace}", namespc)
         generate source
 
     interface ITypeProvider with
         [<CLIEvent>]
-        member x.Invalidate = invalidate.Publish
+        member x.Invalidate = invalidateEvent.Publish
         member x.GetStaticParameters(typeWithoutArguments) = [||]
         member x.GetGeneratedAssemblyContents(assembly) =
             match providedAssembly with

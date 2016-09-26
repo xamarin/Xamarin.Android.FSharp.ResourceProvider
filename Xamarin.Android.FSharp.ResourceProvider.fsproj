@@ -38,5 +38,8 @@
   <ItemGroup>
     <Compile Include="ResourceTypeProvider.fs" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resource.designer.cs" />
+  </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />
 </Project>
