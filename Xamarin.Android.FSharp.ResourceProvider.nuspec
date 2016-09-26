@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>Xamarin.Android.FSharp.ResourceProvider</id>
+        <version>1.0.0.5</version>
+        <title>Xamarin.Android.FSharp.ResourceProvider</title>
+        <authors>Xamarin</authors>
+        <owners>Xamarin</owners>
+        <references>
+          <reference file="Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" />
+        </references>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Android resource Type Provider</description>
+        <copyright>MIT License</copyright>
+        <language>en-US</language>
+    </metadata>
+    <files>
+        <file src="bin/Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" target="lib/Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" />
+        <file src="bin/Xamarin.Android.FSharp.ResourceProvider.dll" target="lib/Xamarin.Android.FSharp.ResourceProvider.dll" />
+    </files>
+</package>
