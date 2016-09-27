@@ -56,7 +56,7 @@ type ResourceProvider(config : TypeProviderConfig) =
                 // When the TP is ran from XS, config.ReferencedAssemblies doesn't contain mscorlib or System.dll
                 // but from xbuild, it does. Need to investigate why.
                 let systemPath = Path.GetDirectoryName androidRef
-                cp.ReferencedAssemblies.Add(Path.Combine(systemPath, "..",  "v1.0", assemblyFileName)) |> ignore
+                cp.ReferencedAssemblies.Add(systemPath/".."/"v1.0"/assemblyFileName) |> ignore
             | _, _ -> ()
 
         addIfMissingReference system
