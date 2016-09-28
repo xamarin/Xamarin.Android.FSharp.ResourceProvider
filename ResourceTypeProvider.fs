@@ -22,13 +22,11 @@ type ResourceProvider(config : TypeProviderConfig) =
     // watcher doesn't trigger when I specify the filename exactly
     let watcher = new FileSystemWatcher(pathToResources, "*.cs", EnableRaisingEvents=true)
 
-
     let generate sourceCode =
-        let guid = Guid.NewGuid() |> string
         let asm = sprintf "ProvidedTypes%s.dll" (Guid.NewGuid() |> string)
         let cp = CompilerParameters(
                     GenerateInMemory = false,
-                    OutputAssembly = Path.Combine(config.TemporaryFolder, asm),
+                    OutputAssembly = config.TemporaryFolder/asm,
                     TempFiles = new TempFileCollection(config.TemporaryFolder, false),
                     CompilerOptions = "/nostdlib /noconfig")
 
@@ -46,9 +44,9 @@ type ResourceProvider(config : TypeProviderConfig) =
 
 
         printfn "F# Android resource provider"
-        let android = addReference "Mono.Android.dll"
         let system = addReference "System.dll"
         let mscorlib = addReference "mscorlib.dll"
+        let android = addReference "Mono.Android.dll"
 
         let addIfMissingReference addResult =
             match android, addResult with
@@ -97,6 +95,8 @@ type ResourceProvider(config : TypeProviderConfig) =
         invalidateEvent.Trigger(null, null)
 
     do
+        printfn "Resource folder %s" config.ResolutionFolder
+        printfn "Resource file name %s" resourceFileName
         watcher.Changed.Add invalidate
         watcher.Created.Add invalidate
 
@@ -109,7 +109,8 @@ type ResourceProvider(config : TypeProviderConfig) =
             let asm = 
                 match existingAssembly with
                 | Some a -> printfn "Resolved to %s" a.Location
-                            a
+                            Assembly.ReflectionOnlyLoadFrom a.Location
+
                 | None -> null
             asm)
 
