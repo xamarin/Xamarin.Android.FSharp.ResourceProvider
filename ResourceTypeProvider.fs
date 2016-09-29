@@ -30,14 +30,24 @@ type ResourceProvider(config : TypeProviderConfig) =
                     TempFiles = new TempFileCollection(config.TemporaryFolder, false),
                     CompilerOptions = "/nostdlib /noconfig")
 
+        let addRef ref = cp.ReferencedAssemblies.Add ref |> ignore
+
+        let addProjectReferences() =
+            // This might add references that we don't need. Not sure it matters.
+            let parentFolder = (Directory.GetParent config.ResolutionFolder)
+
+            config.ReferencedAssemblies
+            |> Array.filter(fun r -> r.StartsWith parentFolder.FullName)
+            |> Array.iter addRef
+
         let addReference assemblyFileName =
             printfn "Adding reference %s" assemblyFileName
             let reference =
                 config.ReferencedAssemblies |> Array.tryFind(fun r -> r.EndsWith(assemblyFileName, StringComparison.InvariantCultureIgnoreCase)
                                                                       && r.IndexOf("Facade") = -1)
-                                                                      
+
             match reference with
-            | Some ref -> cp.ReferencedAssemblies.Add ref |> ignore
+            | Some ref -> addRef ref
                           (Some ref, assemblyFileName)
             | None -> printfn "Did not find %s in referenced assemblies." assemblyFileName
                       None, assemblyFileName
@@ -48,13 +58,15 @@ type ResourceProvider(config : TypeProviderConfig) =
         let mscorlib = addReference "mscorlib.dll"
         let android = addReference "Mono.Android.dll"
 
+        addProjectReferences()
+
         let addIfMissingReference addResult =
             match android, addResult with
             | (Some androidRef, _), (None, assemblyFileName) ->
                 // When the TP is ran from XS, config.ReferencedAssemblies doesn't contain mscorlib or System.dll
                 // but from xbuild, it does. Need to investigate why.
                 let systemPath = Path.GetDirectoryName androidRef
-                cp.ReferencedAssemblies.Add(systemPath/".."/"v1.0"/assemblyFileName) |> ignore
+                addRef (systemPath/".."/"v1.0"/assemblyFileName)
             | _, _ -> ()
 
         addIfMissingReference system
