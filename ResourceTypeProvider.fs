@@ -35,9 +35,9 @@ type ResourceProvider(config : TypeProviderConfig) =
         let addProjectReferences() =
             // This might add references that we don't need. Not sure it matters.
             let parentFolder = (Directory.GetParent config.ResolutionFolder)
-
+            let dlls = Directory.EnumerateFiles(parentFolder.FullName, "*.dll", SearchOption.AllDirectories)
             config.ReferencedAssemblies
-            |> Array.filter(fun r -> r.StartsWith parentFolder.FullName)
+            //|> Array.filter(fun r -> r.StartsWith parentFolder.FullName)
             |> Array.iter addRef
 
         let addReference assemblyFileName =
@@ -57,6 +57,7 @@ type ResourceProvider(config : TypeProviderConfig) =
         let system = addReference "System.dll"
         let mscorlib = addReference "mscorlib.dll"
         let android = addReference "Mono.Android.dll"
+        let nunitLite = addReference "Xamarin.Android.NUnitLite.dll"
 
         addProjectReferences()
 
@@ -71,6 +72,7 @@ type ResourceProvider(config : TypeProviderConfig) =
 
         addIfMissingReference system
         addIfMissingReference mscorlib
+        addIfMissingReference nunitLite
 
         let result = compiler.CompileAssemblyFromSource(cp, [| sourceCode |])
         if result.Errors.HasErrors then
