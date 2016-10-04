@@ -30,20 +30,20 @@ type ResourceProvider(config : TypeProviderConfig) =
                     TempFiles = new TempFileCollection(config.TemporaryFolder, false),
                     CompilerOptions = "/nostdlib /noconfig")
 
-        let addRef ref = cp.ReferencedAssemblies.Add ref |> ignore
+        let addRef ref = 
+            cp.ReferencedAssemblies.Add ref |> ignore
 
         let addProjectReferences() =
             // This might add references that we don't need. Not sure it matters.
             let parentFolder = (Directory.GetParent config.ResolutionFolder)
-            let dlls = Directory.EnumerateFiles(parentFolder.FullName, "*.dll", SearchOption.AllDirectories)
             config.ReferencedAssemblies
-            //|> Array.filter(fun r -> r.StartsWith parentFolder.FullName)
+            |> Array.filter(fun r -> r.StartsWith parentFolder.FullName)
             |> Array.iter addRef
 
         let addReference assemblyFileName =
             printfn "Adding reference %s" assemblyFileName
             let reference =
-                config.ReferencedAssemblies |> Array.tryFind(fun r -> r.EndsWith(assemblyFileName, StringComparison.InvariantCultureIgnoreCase)
+                config.ReferencedAssemblies |> Array.tryFind(fun r -> r.EndsWith(sprintf "%c%s" Path.DirectorySeparatorChar assemblyFileName, StringComparison.InvariantCultureIgnoreCase)
                                                                       && r.IndexOf("Facade") = -1)
 
             match reference with
@@ -76,8 +76,13 @@ type ResourceProvider(config : TypeProviderConfig) =
 
         let result = compiler.CompileAssemblyFromSource(cp, [| sourceCode |])
         if result.Errors.HasErrors then
-            printfn "%A" result.Errors
-            failwithf "%A" result.Errors
+            let errors = [ for e in result.Errors do yield e ] 
+                         |> List.filter (fun e -> not e.IsWarning )
+
+            if errors.Length > 0 then
+                printfn "%A" errors
+                failwithf "%A" errors
+
         let asm = Assembly.ReflectionOnlyLoadFrom cp.OutputAssembly
 
         let types = asm.GetTypes()
