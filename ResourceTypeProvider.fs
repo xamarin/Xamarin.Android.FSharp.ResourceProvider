@@ -5,6 +5,8 @@ open System.IO
 open System.Reflection
 open System.CodeDom.Compiler
 open System.Collections.Generic
+open System.Xml
+open System.Xml.Linq
 open Microsoft.CSharp
 open FSharp.Quotations
 open FSharp.Core.CompilerServices
@@ -134,6 +136,22 @@ type ResourceProvider(config : TypeProviderConfig) =
                 | None -> null
             asm)
 
+        let getRootNamespace() =
+            // Try and guess what the namespace should be...
+            // This will work 99%+ of the time and if it
+            // doesn't, a build will fix. This is only until the real
+            // resources file has been generated.
+            let dir = new DirectoryInfo(config.ResolutionFolder)
+            try
+                let fsproj = Directory.GetFiles(config.ResolutionFolder, "*.fsproj") |> Array.head
+                let nsuri = "http://schemas.microsoft.com/developer/msbuild/2003"
+                let ns = XNamespace.Get nsuri
+                let doc = XDocument.Load fsproj
+                let rootnamespaceNode = doc.Descendants(ns + "RootNamespace") |> Seq.head
+                rootnamespaceNode.Value
+            with
+            | ex -> dir.Name
+
         let source =
             if File.Exists resourceFileName then
                 File.ReadAllText resourceFileName
@@ -143,7 +161,8 @@ type ResourceProvider(config : TypeProviderConfig) =
                 use stream = asm.GetManifestResourceStream("Resource.designer.cs")
                 use reader = new StreamReader(stream)
                 let source = reader.ReadToEnd()
-                let namespc = (new DirectoryInfo(config.ResolutionFolder)).Name
+
+                let namespc = getRootNamespace()
                 source.Replace("${Namespace}", namespc)
         generate source
 
