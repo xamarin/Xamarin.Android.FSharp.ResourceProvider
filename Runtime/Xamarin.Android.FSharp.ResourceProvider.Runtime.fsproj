@@ -6,8 +6,7 @@
     <ProjectTypeGuids>{EFBA0AD7-5A72-4C68-AF49-83D382785DCF};{F2A71F9B-5D33-465A-A702-920D77279786}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <RootNamespace>Xamarin.Android.FSharp</RootNamespace>
-    <AssemblyName>
-Xamarin.Android.FSharp.ResourceProvider.Runtime</AssemblyName>
+    <AssemblyName>Xamarin.Android.FSharp.ResourceProvider.Runtime</AssemblyName>
     <TargetFrameworkVersion>v7.0</TargetFrameworkVersion>
     <AndroidResgenFile>Resources\Resource.designer.fs</AndroidResgenFile>
     <AndroidResgenClass>Resource</AndroidResgenClass>
