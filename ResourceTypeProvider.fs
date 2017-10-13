@@ -179,7 +179,16 @@ type ResourceProvider(config : TypeProviderConfig) =
             | Some(_, namespaces) -> namespaces
             | _ -> failwith "Generate was never called"
         member x.ApplyStaticArguments(typeWithoutArguments, typeNameWithArguments, staticArguments) = null
-        member x.GetInvokerExpression(mb, parameters) = Expr.Call(mb :?> MethodInfo, Array.toList parameters)
+        member x.GetInvokerExpression(methodBase, parameters) =
+            match methodBase with
+            | :? ConstructorInfo as cinfo ->
+                Expr.NewObject(cinfo, Array.toList parameters)
+            | :? MethodInfo as minfo ->
+                if minfo.IsStatic then
+                    Expr.Call(minfo, Array.toList parameters)
+                else
+                    Expr.Call(parameters.[0], minfo, Array.toList parameters.[1..])
+            | _ -> failwith ("GetInvokerExpression: not a ConstructorInfo/MethodInfo, name=" + methodBase.Name + " class=" + methodBase.GetType().FullName)
         member x.Dispose() = 
             compiler.Dispose()
             watcher.Dispose()
