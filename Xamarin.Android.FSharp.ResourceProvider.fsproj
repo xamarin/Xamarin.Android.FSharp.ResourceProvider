@@ -44,6 +44,7 @@
     <Compile Include="ResourceTypeProvider.fs" />
     <EmbeddedResource Include="Resource.designer.cs" />
     <None Include="packages.config" />
+    <Compile Include="AssemblyInfo.fs" />
   </ItemGroup>
   <Import Project="$(FSharpTargetsPath)" />
 </Project>
