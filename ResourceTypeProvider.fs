@@ -4,18 +4,17 @@ open System
 open System.IO
 open System.Reflection
 open System.CodeDom.Compiler
-open System.Collections.Generic
-open System.Xml
 open System.Xml.Linq
-open Microsoft.CSharp
-open FSharp.Quotations
 open FSharp.Core.CompilerServices
+open Microsoft.CSharp
 open Microsoft.FSharp.Core.CompilerServices
+open ProviderImplementation.ProvidedTypes
 
 [<TypeProvider>]
-type ResourceProvider(config : TypeProviderConfig) =
-    let mutable providedAssembly = None
-    let invalidateEvent = Event<EventHandler,EventArgs>()
+type ResourceProvider(config : TypeProviderConfig) as this =
+    inherit TypeProviderForNamespaces()
+
+    let ctxt = ProvidedTypesContext.Create(config)
 
     let compiler = new CSharpCodeProvider()
     let (/) a b = Path.Combine(a,b)
@@ -24,11 +23,12 @@ type ResourceProvider(config : TypeProviderConfig) =
     // watcher doesn't trigger when I specify the filename exactly
     let watcher = new FileSystemWatcher(pathToResources, "*.cs", EnableRaisingEvents=true)
 
+    let asm = sprintf "ProvidedTypes%s.dll" (Guid.NewGuid() |> string)
+    let outputPath = config.TemporaryFolder/asm
     let generate sourceCode =
-        let asm = sprintf "ProvidedTypes%s.dll" (Guid.NewGuid() |> string)
         let cp = CompilerParameters(
                     GenerateInMemory = false,
-                    OutputAssembly = config.TemporaryFolder/asm,
+                    OutputAssembly = outputPath,
                     TempFiles = new TempFileCollection(config.TemporaryFolder, false),
                     CompilerOptions = "/nostdlib /noconfig")
 
@@ -87,34 +87,20 @@ type ResourceProvider(config : TypeProviderConfig) =
                 failwithf "%A" errors
 
         let asm = Assembly.ReflectionOnlyLoadFrom cp.OutputAssembly
-
-        let types = asm.GetTypes()
-        let namespaces =
-            let dict = Dictionary<_,List<_>>()
-            for t in types do
-                printfn "%A" t
-                let namespc = if isNull t.Namespace then "global" else t.Namespace
-                match dict.TryGetValue(namespc) with
-                | true, ns -> ns.Add(t)
-                | _, _ ->
-                    let ns = List<_>()
-                    ns.Add(t)
-                    dict.Add(namespc, ns)
-            dict
-            |> Seq.map (fun kv ->
-                { new IProvidedNamespace with
-                    member x.NamespaceName = kv.Key
-                    member x.GetNestedNamespaces() = [||] //FIXME
-                    member x.GetTypes() = kv.Value.ToArray()
-                    member x.ResolveTypeName(typeName: string) = null
-                }
-            )
-            |> Seq.toArray
-        providedAssembly <- Some(File.ReadAllBytes(result.PathToAssembly), namespaces)    
-
+        let resourceType = asm.GetTypes() |> Array.tryFind(fun t -> t.Name = "Resource")
+        match resourceType with
+        | Some typ ->
+            let csharpAssembly = Assembly.GetExecutingAssembly()
+            let providedAssembly = ProvidedAssembly(ctxt)
+            let providedType = ctxt.ProvidedTypeDefinition(csharpAssembly, typ.Namespace, typ.Name, Some typeof<obj>, true, true, false)
+            let generatedAssembly = ProvidedAssembly.RegisterGenerated(ctxt, outputPath)
+            providedType.AddMembers (typ.GetNestedTypes() |> List.ofArray)
+            providedAssembly.AddTypes [providedType]
+            this.AddNamespace(typ.Namespace, [providedType])    
+        | None -> failwith "No resource type found"
     let invalidate _ =
         printfn "Invalidating resources"
-        invalidateEvent.Trigger(null, null)
+        this.Invalidate()
 
     do
         printfn "Resource folder %s" config.ResolutionFolder
@@ -165,33 +151,6 @@ type ResourceProvider(config : TypeProviderConfig) =
                 let namespc = getRootNamespace()
                 source.Replace("${Namespace}", namespc)
         generate source
-
-    interface ITypeProvider with
-        [<CLIEvent>]
-        member x.Invalidate = invalidateEvent.Publish
-        member x.GetStaticParameters(typeWithoutArguments) = [||]
-        member x.GetGeneratedAssemblyContents(assembly) =
-            match providedAssembly with
-            | Some(bytes, _) -> bytes
-            | _ -> failwith "Generate was never called"
-        member x.GetNamespaces() =
-            match providedAssembly with
-            | Some(_, namespaces) -> namespaces
-            | _ -> failwith "Generate was never called"
-        member x.ApplyStaticArguments(typeWithoutArguments, typeNameWithArguments, staticArguments) = null
-        member x.GetInvokerExpression(methodBase, parameters) =
-            match methodBase with
-            | :? ConstructorInfo as cinfo ->
-                Expr.NewObject(cinfo, Array.toList parameters)
-            | :? MethodInfo as minfo ->
-                if minfo.IsStatic then
-                    Expr.Call(minfo, Array.toList parameters)
-                else
-                    Expr.Call(parameters.[0], minfo, Array.toList parameters.[1..])
-            | _ -> failwith ("GetInvokerExpression: not a ConstructorInfo/MethodInfo, name=" + methodBase.Name + " class=" + methodBase.GetType().FullName)
-        member x.Dispose() = 
-            compiler.Dispose()
-            watcher.Dispose()
 
 [<assembly: TypeProviderAssembly>]
 do()
