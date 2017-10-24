@@ -40,10 +40,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fsi" />
-    <Compile Remove="paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fs" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Resource.designer.cs" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="paket-files\fsprojects\FSharp.TypeProviders.StarterPack\src\ProvidedTypes.fsi">
