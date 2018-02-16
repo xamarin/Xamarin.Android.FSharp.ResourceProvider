@@ -39,8 +39,15 @@ type ResourceProvider(config : TypeProviderConfig) as this =
             // This might add references that we don't need. Not sure it matters.
             let parentFolder = (Directory.GetParent config.ResolutionFolder)
             let packages = sprintf "%c%s%c" Path.DirectorySeparatorChar "packages" Path.DirectorySeparatorChar
+            let components = sprintf "%c%s%c" Path.DirectorySeparatorChar "components" Path.DirectorySeparatorChar
+            let isRefAssembly (r:string) =
+                (r.StartsWith parentFolder.FullName
+                 || r.IndexOf(packages, StringComparison.OrdinalIgnoreCase) >= 0
+                 || r.IndexOf(components, StringComparison.OrdinalIgnoreCase) >= 0)
+                && File.Exists r 
+
             config.ReferencedAssemblies
-            |> Array.filter(fun r -> File.Exists r && (r.StartsWith parentFolder.FullName || r.IndexOf(packages, StringComparison.OrdinalIgnoreCase) >= 0))
+            |> Array.filter(isRefAssembly)
             |> Array.iter addRef
 
         let addReference assemblyFileName =
