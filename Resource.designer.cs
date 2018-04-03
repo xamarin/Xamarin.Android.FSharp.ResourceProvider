@@ -27,12 +27,18 @@
 		public partial class Layout
 		{
 
-			// aapt resource value: 0x7f030000
-			public const int Main = 2130903040;
+				// aapt resource value: 0x7f030000
+				public const int Main = 2130903040;
 
-			private Layout ()
-			{
-			}
+				// aapt resource value: 0x7f030042
+				public const int Tabbar = 2130903106;
+
+				// aapt resource value: 0x7f030043
+				public const int Toolbar = 2130903107;
+
+				private Layout()
+				{
+				}
 		}
 
 		public partial class String
