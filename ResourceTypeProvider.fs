@@ -7,7 +7,6 @@ open System.CodeDom.Compiler
 open System.Xml.Linq
 open FSharp.Core.CompilerServices
 open Microsoft.CSharp
-open Microsoft.FSharp.Core.CompilerServices
 open ProviderImplementation.ProvidedTypes
 
 [<TypeProvider>]
@@ -15,6 +14,8 @@ type ResourceProvider(config : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces()
 
     let ctxt = ProvidedTypesContext.Create(config)
+
+    let isInsideIDE = config.IsInvalidationSupported // msbuild doesn't support invalidation
 
     let compiler = new CSharpCodeProvider()
     let (/) a b = Path.Combine(a,b)
@@ -58,31 +59,22 @@ type ResourceProvider(config : TypeProviderConfig) as this =
 
             match reference with
             | Some ref -> addRef ref
-                          (Some ref, assemblyFileName)
             | None -> printfn "Did not find %s in referenced assemblies." assemblyFileName
-                      None, assemblyFileName
-
 
         printfn "F# Android resource provider"
-        let system = addReference "System.dll"
-        let mscorlib = addReference "mscorlib.dll"
-        let android = addReference "Mono.Android.dll"
-        let nunitLite = addReference "Xamarin.Android.NUnitLite.dll"
+
+        addReference "System.dll"
+        addReference "mscorlib.dll"
 
         addProjectReferences()
 
-        let addIfMissingReference addResult =
-            match android, addResult with
-            | (Some androidRef, _), (None, assemblyFileName) ->
-                // When the TP is ran from XS, config.ReferencedAssemblies doesn't contain mscorlib or System.dll
-                // but from xbuild, it does. Need to investigate why.
-                let systemPath = Path.GetDirectoryName androidRef
-                addRef (systemPath/".."/"v1.0"/assemblyFileName)
-            | _, _ -> ()
+        if isInsideIDE then
+            printfn "Running inside IDE context"
+        else
+            printfn "Running inside MsBuild context"
 
-        addIfMissingReference system
-        addIfMissingReference mscorlib
-        addIfMissingReference nunitLite
+            addReference "Mono.Android.dll"
+            addReference "Xamarin.Android.NUnitLite.dll"
 
         let result = compiler.CompileAssemblyFromSource(cp, [| sourceCode |])
         if result.Errors.HasErrors then
@@ -115,24 +107,10 @@ type ResourceProvider(config : TypeProviderConfig) as this =
         watcher.Changed.Add invalidate
         watcher.Created.Add invalidate
 
-        AppDomain.CurrentDomain.add_ReflectionOnlyAssemblyResolve(fun _ args ->
-            let name = AssemblyName(args.Name)
-            printfn "Resolving %s" args.Name
-            let existingAssembly = 
-                AppDomain.CurrentDomain.GetAssemblies()
-                |> Seq.tryFind(fun a -> AssemblyName.ReferenceMatchesDefinition(name, a.GetName()))
-            let asm = 
-                match existingAssembly with
-                | Some a -> printfn "Resolved to %s" a.Location
-                            Assembly.ReflectionOnlyLoadFrom a.Location
-
-                | None -> null
-            asm)
-
         let getRootNamespace() =
             // Try and guess what the namespace should be...
             // This will work 99%+ of the time and if it
-            // doesn't, a build will fix. This is only until the real
+            // doesn't, a build will fix. This is only needed until the real
             // resources file has been generated.
             let dir = new DirectoryInfo(config.ResolutionFolder)
             try
@@ -145,18 +123,27 @@ type ResourceProvider(config : TypeProviderConfig) as this =
             with
             | ex -> dir.Name
 
+        /// Filter out all lines that use the global namespace. These are only used at
+        /// runtime and require references to Mono.Android and XF which are problematic to load
+        /// inside the IDE context
+        let shouldAddLine (line: string) =
+            not isInsideIDE ||
+                isInsideIDE && not (line.Contains("global::"))
+
         let source =
             if File.Exists resourceFileName then
-                File.ReadAllText resourceFileName
+                File.ReadLines resourceFileName
+                |> Seq.filter shouldAddLine
+                |> String.concat "\n"
             else
                 let asm = Assembly.GetExecutingAssembly()
                 let resourceNames = asm.GetManifestResourceNames()
                 use stream = asm.GetManifestResourceStream("Resource.designer.cs")
                 use reader = new StreamReader(stream)
                 let source = reader.ReadToEnd()
-
                 let namespc = getRootNamespace()
                 source.Replace("${Namespace}", namespc)
+
         generate source
 
 [<assembly: TypeProviderAssembly>]
