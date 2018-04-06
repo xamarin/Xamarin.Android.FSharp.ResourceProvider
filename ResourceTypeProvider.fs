@@ -4,18 +4,19 @@ open System
 open System.IO
 open System.Reflection
 open System.CodeDom.Compiler
+open System.Collections.Generic
 open System.Xml.Linq
 open FSharp.Core.CompilerServices
+open FSharp.Quotations
 open Microsoft.CSharp
-open ProviderImplementation.ProvidedTypes
 
 [<TypeProvider>]
-type ResourceProvider(config : TypeProviderConfig) as this =
-    inherit TypeProviderForNamespaces()
-
-    let ctxt = ProvidedTypesContext.Create(config)
+type ResourceProvider(config : TypeProviderConfig) =
+    let mutable providedAssembly = None
+    let invalidateEvent = Event<EventHandler,EventArgs>()
 
     let isInsideIDE = config.IsInvalidationSupported // msbuild doesn't support invalidation
+    let isMsBuild = not isInsideIDE
 
     let compiler = new CSharpCodeProvider()
     let (/) a b = Path.Combine(a,b)
@@ -61,7 +62,8 @@ type ResourceProvider(config : TypeProviderConfig) as this =
             | Some ref -> addRef ref
             | None -> printfn "Did not find %s in referenced assemblies." assemblyFileName
 
-        printfn "F# Android resource provider"
+        let version = Assembly.GetExecutingAssembly().GetName().Version
+        printfn "F# Android resource provider %A" version 
 
         addReference "System.dll"
         addReference "mscorlib.dll"
@@ -86,26 +88,52 @@ type ResourceProvider(config : TypeProviderConfig) as this =
                 failwithf "%A" errors
 
         let asm = Assembly.ReflectionOnlyLoadFrom cp.OutputAssembly
-        let resourceType = asm.GetTypes() |> Array.tryFind(fun t -> t.Name = "Resource")
-        match resourceType with
-        | Some typ ->
-            let csharpAssembly = Assembly.GetExecutingAssembly()
-            let providedAssembly = ProvidedAssembly(ctxt)
-            let providedType = ctxt.ProvidedTypeDefinition(csharpAssembly, typ.Namespace, typ.Name, Some typeof<obj>, true, true, false)
-            let generatedAssembly = ProvidedAssembly.RegisterGenerated(ctxt, outputPath)
-            providedType.AddMembers (typ.GetNestedTypes() |> List.ofArray)
-            providedAssembly.AddTypes [providedType]
-            this.AddNamespace(typ.Namespace, [providedType])    
-        | None -> failwith "No resource type found"
+        let types = asm.GetTypes()
+        let namespaces =
+            let dict = Dictionary<_,List<_>>()
+            for t in types do
+                let namespc = if isNull t.Namespace then "global" else t.Namespace
+                match dict.TryGetValue(namespc) with
+                | true, ns -> ns.Add(t)
+                | _, _ ->
+                    let ns = List<_>()
+                    ns.Add(t)
+                    dict.Add(namespc, ns)
+            dict
+            |> Seq.map (fun kv ->
+                { new IProvidedNamespace with
+                    member x.NamespaceName = kv.Key
+                    member x.GetNestedNamespaces() = [||] //FIXME
+                    member x.GetTypes() = kv.Value.ToArray()
+                    member x.ResolveTypeName(typeName: string) = null
+                }
+            )
+            |> Seq.toArray
+        providedAssembly <- Some(File.ReadAllBytes(result.PathToAssembly), namespaces)    
+
     let invalidate _ =
         printfn "Invalidating resources"
-        this.Invalidate()
+        invalidateEvent.Trigger(null, null)
 
     do
         printfn "Resource folder %s" config.ResolutionFolder
         printfn "Resource file name %s" resourceFileName
         watcher.Changed.Add invalidate
         watcher.Created.Add invalidate
+
+        AppDomain.CurrentDomain.add_ReflectionOnlyAssemblyResolve(fun _ args ->
+            let name = AssemblyName(args.Name)
+            printfn "Resolving %s" args.Name
+            let existingAssembly = 
+                AppDomain.CurrentDomain.GetAssemblies()
+                |> Seq.tryFind(fun a -> AssemblyName.ReferenceMatchesDefinition(name, a.GetName()))
+            let asm = 
+                match existingAssembly with
+                | Some a -> printfn "Resolved to %s" a.Location
+                            Assembly.ReflectionOnlyLoadFrom a.Location
+
+                | None -> null
+            asm)
 
         let getRootNamespace() =
             // Try and guess what the namespace should be...
@@ -125,9 +153,13 @@ type ResourceProvider(config : TypeProviderConfig) as this =
 
         /// Filter out all lines that use the global namespace. These are only used at
         /// runtime and require references to Mono.Android and XF which are problematic to load
-        /// inside the IDE context
+        /// inside the IDE context.
+        ///
+        /// The C# code also contains private static constructors that contain code that we
+        /// don't want to execute inside the IDE. This code is needed inside the msbuild / runtime
+        /// context to update resource ID values between libraries.
         let shouldAddLine (line: string) =
-            not isInsideIDE ||
+            isMsBuild ||
                 isInsideIDE && not (line.Contains("global::"))
 
         let source =
@@ -145,6 +177,33 @@ type ResourceProvider(config : TypeProviderConfig) as this =
                 source.Replace("${Namespace}", namespc)
 
         generate source
+
+    interface ITypeProvider with
+        [<CLIEvent>]
+        member x.Invalidate = invalidateEvent.Publish
+        member x.GetStaticParameters(typeWithoutArguments) = [||]
+        member x.GetGeneratedAssemblyContents(assembly) =
+            match providedAssembly with
+            | Some(bytes, _) -> bytes
+            | _ -> failwith "Generate was never called"
+        member x.GetNamespaces() =
+            match providedAssembly with
+            | Some(_, namespaces) -> namespaces
+            | _ -> failwith "Generate was never called"
+        member x.ApplyStaticArguments(typeWithoutArguments, typeNameWithArguments, staticArguments) = null
+        member x.GetInvokerExpression(methodBase, parameters) =
+            match methodBase with
+            | :? ConstructorInfo as cinfo ->
+                Expr.NewObject(cinfo, Array.toList parameters)
+            | :? MethodInfo as minfo ->
+                if minfo.IsStatic then
+                    Expr.Call(minfo, Array.toList parameters)
+                else
+                    Expr.Call(parameters.[0], minfo, Array.toList parameters.[1..])
+            | _ -> failwith ("GetInvokerExpression: not a ConstructorInfo/MethodInfo, name=" + methodBase.Name + " class=" + methodBase.GetType().FullName)
+        member x.Dispose() = 
+            compiler.Dispose()
+            watcher.Dispose()
 
 [<assembly: TypeProviderAssembly>]
 do()

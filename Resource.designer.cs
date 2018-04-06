@@ -2,7 +2,7 @@
 {
 
 
-	public partial class Resource
+	public partial class Resources
 	{
 
 		public partial class Attribute
@@ -64,6 +64,10 @@
 			private Id ()
 			{
 			}
+		}
+
+		public static UpdateIdValues()
+		{
 		}
 	}
 }
