@@ -84,6 +84,7 @@ type ResourceProvider(config : TypeProviderConfig) =
                          |> List.filter (fun e -> not e.IsWarning )
 
             if errors.Length > 0 then
+                printfn "%s" sourceCode
                 printfn "%A" errors
                 failwithf "%A" errors
 

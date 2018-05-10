@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Xamarin.Android.FSharp</RootNamespace>
     <AssemblyName>Xamarin.Android.FSharp.ResourceProvider.Runtime</AssemblyName>
-    <TargetFrameworkVersion>v8.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v8.1</TargetFrameworkVersion>
     <AndroidResgenFile>Resources\Resource.designer.fs</AndroidResgenFile>
     <AndroidResgenClass>Resource</AndroidResgenClass>
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>

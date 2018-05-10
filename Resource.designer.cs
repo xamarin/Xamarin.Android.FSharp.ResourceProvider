@@ -65,9 +65,5 @@
 			{
 			}
 		}
-
-		public static UpdateIdValues()
-		{
-		}
 	}
 }
