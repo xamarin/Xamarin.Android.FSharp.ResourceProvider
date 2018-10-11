@@ -37,16 +37,22 @@ type ResourceProvider(config : TypeProviderConfig) =
         let addRef ref = 
             cp.ReferencedAssemblies.Add ref |> ignore
 
+        let rec getSolutionRootFolder (folder:DirectoryInfo) =
+            match folder.EnumerateFiles("*.sln") |> Seq.tryHead with
+            | Some _sln -> folder
+            | None ->
+                let parent = folder.Parent |> Option.ofObj
+                match parent with
+                | Some p -> getSolutionRootFolder p
+                | None -> config.ResolutionFolder |> DirectoryInfo
+
+
         let addProjectReferences() =
             // This might add references that we don't need. Not sure it matters.
-            let parentFolder = (Directory.GetParent config.ResolutionFolder)
-            let packages = sprintf "%c%s%c" Path.DirectorySeparatorChar "packages" Path.DirectorySeparatorChar
-            let components = sprintf "%c%s%c" Path.DirectorySeparatorChar "components" Path.DirectorySeparatorChar
+            let parentFolder = getSolutionRootFolder (DirectoryInfo config.ResolutionFolder)
+
             let isRefAssembly (r:string) =
-                (r.StartsWith parentFolder.FullName
-                 || r.IndexOf(packages, StringComparison.OrdinalIgnoreCase) >= 0
-                 || r.IndexOf(components, StringComparison.OrdinalIgnoreCase) >= 0)
-                && File.Exists r 
+                r.StartsWith parentFolder.FullName && File.Exists r
 
             config.ReferencedAssemblies
             |> Array.filter(isRefAssembly)
