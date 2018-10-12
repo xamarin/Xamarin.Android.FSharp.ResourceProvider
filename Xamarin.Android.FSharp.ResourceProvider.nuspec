@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>Xamarin.Android.FSharp.ResourceProvider</id>
-        <version>1.0.0.26</version>
+        <version>1.0.0.27</version>
         <title>Xamarin.Android.FSharp.ResourceProvider</title>
         <authors>Xamarin</authors>
         <owners>Xamarin</owners>
@@ -15,7 +15,7 @@
         <language>en-US</language>
     </metadata>
     <files>
-        <file src="bin/Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" target="lib/Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" />
-        <file src="bin/Xamarin.Android.FSharp.ResourceProvider.dll" target="lib/Xamarin.Android.FSharp.ResourceProvider.dll" />
+        <file src="bin/Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" target="lib/monoandroid81/Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" />
+        <file src="bin/Xamarin.Android.FSharp.ResourceProvider.dll" target="lib/monoandroid81/Xamarin.Android.FSharp.ResourceProvider.dll" />
     </files>
 </package>
