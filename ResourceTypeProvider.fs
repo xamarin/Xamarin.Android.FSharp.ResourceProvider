@@ -37,27 +37,6 @@ type ResourceProvider(config : TypeProviderConfig) =
         let addRef ref = 
             cp.ReferencedAssemblies.Add ref |> ignore
 
-        let rec getSolutionRootFolder (folder:DirectoryInfo) =
-            match folder.EnumerateFiles("*.sln") |> Seq.tryHead with
-            | Some _sln -> folder
-            | None ->
-                let parent = folder.Parent |> Option.ofObj
-                match parent with
-                | Some p -> getSolutionRootFolder p
-                | None -> config.ResolutionFolder |> DirectoryInfo
-
-
-        let addProjectReferences() =
-            // This might add references that we don't need. Not sure it matters.
-            let parentFolder = getSolutionRootFolder (DirectoryInfo config.ResolutionFolder)
-
-            let isRefAssembly (r:string) =
-                r.StartsWith parentFolder.FullName && File.Exists r
-
-            config.ReferencedAssemblies
-            |> Array.filter(isRefAssembly)
-            |> Array.iter addRef
-
         let addReference assemblyFileName =
             printfn "Adding reference %s" assemblyFileName
             let reference =
@@ -74,7 +53,8 @@ type ResourceProvider(config : TypeProviderConfig) =
         addReference "System.dll"
         addReference "mscorlib.dll"
 
-        addProjectReferences()
+        config.ReferencedAssemblies
+        |> Array.iter addRef
 
         if isInsideIDE then
             printfn "Running inside IDE context"
