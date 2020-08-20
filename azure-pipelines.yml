@@ -1,10 +1,10 @@
 # Xamarin.Android.FSharp.ResourceProvider
 
 trigger:
-  - main
+  - master
 
 pr:
-  - main
+  - master
 
 jobs:
 - job: build
@@ -47,8 +47,7 @@ jobs:
     inputs:
       command: push
       packagesToPush: $(System.DefaultWorkingDirectory)/bin/*.nupkg
-      nuGetFeedType: external
-      publishFeedCredentials: xamarin-impl public feed
+      publishVstsFeed: public/Xamarin.Android
     condition: and(succeeded(), eq(variables['PushToFeed'], 'true'))
 
   - task: PublishPipelineArtifact@1
