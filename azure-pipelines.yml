@@ -22,25 +22,18 @@ jobs:
   - checkout: self
     clean: true
 
-  - task: NuGetCommand@2
-    displayName: nuget restore Xamarin.Android.FSharp.ResourceProvider.sln
-    inputs:
-      command: restore
-      restoreSolution: $(System.DefaultWorkingDirectory)/Xamarin.Android.FSharp.ResourceProvider.sln
-
   - task: MSBuild@1
     displayName: msbuild Xamarin.Android.FSharp.ResourceProvider.sln
     inputs:
       solution: $(System.DefaultWorkingDirectory)/Xamarin.Android.FSharp.ResourceProvider.sln
-      msbuildArguments: /bl:$(System.DefaultWorkingDirectory)/bin/build.binlog
+      msbuildArguments: /restore /bl:$(System.DefaultWorkingDirectory)/bin/build.binlog
       configuration: Release
-      restoreNugetPackages: true
 
   - task: NuGetCommand@2
     displayName: pack nupkg
     inputs:
       command: pack
-      packagesToPack: $(System.DefaultWorkingDirectory)/Xamarin.Android.FSharp.ResourceProvider.fsproj
+      packagesToPack: $(System.DefaultWorkingDirectory)/Xamarin.Android.FSharp.ResourceProvider.nuspec
       packDestination: $(System.DefaultWorkingDirectory)/bin/
 
   - task: NuGetCommand@2
