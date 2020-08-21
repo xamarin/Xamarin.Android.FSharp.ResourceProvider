@@ -1,0 +1,59 @@
+# Xamarin.Android.FSharp.ResourceProvider
+
+trigger:
+  - master
+
+pr:
+  - master
+
+jobs:
+- job: build
+  displayName: Build
+  timeoutInMinutes: 60
+  cancelTimeoutInMinutes: 2
+
+  pool:
+    vmImage: macOS-10.15
+
+  workspace:
+    clean: all
+
+  steps:
+  - checkout: self
+    clean: true
+
+  - task: NuGetCommand@2
+    displayName: nuget restore Xamarin.Android.FSharp.ResourceProvider.sln
+    inputs:
+      command: restore
+      restoreSolution: $(System.DefaultWorkingDirectory)/Xamarin.Android.FSharp.ResourceProvider.sln
+
+  - task: MSBuild@1
+    displayName: msbuild Xamarin.Android.FSharp.ResourceProvider.sln
+    inputs:
+      solution: $(System.DefaultWorkingDirectory)/Xamarin.Android.FSharp.ResourceProvider.sln
+      msbuildArguments: /bl:$(System.DefaultWorkingDirectory)/bin/build.binlog
+      configuration: Release
+      restoreNugetPackages: true
+
+  - task: NuGetCommand@2
+    displayName: pack nupkg
+    inputs:
+      command: pack
+      packagesToPack: $(System.DefaultWorkingDirectory)/Xamarin.Android.FSharp.ResourceProvider.fsproj
+      packDestination: $(System.DefaultWorkingDirectory)/bin/
+
+  - task: NuGetCommand@2
+    displayName: push nupkg
+    inputs:
+      command: push
+      packagesToPush: $(System.DefaultWorkingDirectory)/bin/*.nupkg
+      publishVstsFeed: public/Xamarin.Android
+    condition: and(succeeded(), eq(variables['PushToFeed'], 'true'))
+
+  - task: PublishPipelineArtifact@1
+    displayName: publish output
+    inputs:
+      targetPath: $(System.DefaultWorkingDirectory)/bin
+      artifactName: Xamarin.Android.FSharp.ResourceProvider
+    condition: succeededOrFailed()
