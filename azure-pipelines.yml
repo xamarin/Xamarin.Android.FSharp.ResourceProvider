@@ -33,6 +33,7 @@ jobs:
     inputs:
       solution: $(System.DefaultWorkingDirectory)/Xamarin.Android.FSharp.ResourceProvider.sln
       msbuildArguments: /bl:$(System.DefaultWorkingDirectory)/bin/build.binlog
+      configuration: Release
       restoreNugetPackages: true
 
   - task: NuGetCommand@2
