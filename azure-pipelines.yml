@@ -14,6 +14,10 @@ resources:
     ref: refs/heads/main
     endpoint: xamarin
 
+variables:
+  - group: Xamarin-Secrets
+  - group: Xamarin Release
+
 jobs:
 - job: build
   displayName: Build
@@ -52,6 +56,12 @@ jobs:
       nuGetFeedType: external
       publishFeedCredentials: xamarin-impl public feed
     condition: and(succeeded(), eq(variables['PushToFeed'], 'true'))
+
+  - task: CopyFiles@2
+    displayName: copy SignList.xml to artifact
+    inputs:
+      Contents: SignList.xml
+      TargetFolder: $(System.DefaultWorkingDirectory)/bin
 
   - task: PublishPipelineArtifact@1
     displayName: publish output

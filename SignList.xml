@@ -1,0 +1,8 @@
+<Project>
+
+  <ItemGroup>
+    <FirstParty Include="Xamarin.Android.FSharp.ResourceProvider.dll" />
+    <FirstParty Include="Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" />
+  </ItemGroup>
+
+</Project>
