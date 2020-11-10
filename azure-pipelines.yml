@@ -11,7 +11,7 @@ resources:
   - repository: templates
     type: github
     name: xamarin/yaml-templates
-    ref: refs/heads/dev/logging
+    ref: refs/heads/main
     endpoint: xamarin
 
 variables:
@@ -63,10 +63,10 @@ jobs:
       Contents: SignList.xml
       TargetFolder: $(System.DefaultWorkingDirectory)/bin
 
-  - task: PublishPipelineArtifact@1
+  - task: PublishBuildArtifact@1
     displayName: publish output
     inputs:
-      targetPath: $(System.DefaultWorkingDirectory)/bin
+      pathToPublish: $(System.DefaultWorkingDirectory)/bin
       artifactName: Xamarin.Android.FSharp.ResourceProvider
     condition: succeededOrFailed()
 
@@ -74,4 +74,3 @@ jobs:
   parameters:
     artifactName: Xamarin.Android.FSharp.ResourceProvider
     dependsOn: [ 'build' ]
-    templateBranch: dev/logging
