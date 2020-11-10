@@ -67,9 +67,10 @@ jobs:
     displayName: publish output
     inputs:
       targetPath: $(System.DefaultWorkingDirectory)/bin
-      artifactName: nuget
+      artifactName: Xamarin.Android.FSharp.ResourceProvider
     condition: succeededOrFailed()
 
 - template: sign-artifacts/jobs/v2.yml@templates
   parameters:
+    artifactName: Xamarin.Android.FSharp.ResourceProvider
     dependsOn: [ 'build' ]
