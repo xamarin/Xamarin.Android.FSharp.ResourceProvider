@@ -63,7 +63,7 @@ jobs:
       Contents: SignList.xml
       TargetFolder: $(System.DefaultWorkingDirectory)/bin
 
-  - task: PublishBuildArtifact@1
+  - task: PublishBuildArtifacts@1
     displayName: publish output
     inputs:
       pathToPublish: $(System.DefaultWorkingDirectory)/bin
