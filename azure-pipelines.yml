@@ -1,10 +1,22 @@
 # Xamarin.Android.FSharp.ResourceProvider
 
 trigger:
-  - master
+  - main
 
 pr:
-  - master
+  - main
+
+resources:
+  repositories:
+  - repository: templates
+    type: github
+    name: xamarin/yaml-templates
+    ref: refs/heads/main
+    endpoint: xamarin
+
+variables:
+  - group: Xamarin-Secrets
+  - group: Xamarin Release
 
 jobs:
 - job: build
@@ -41,12 +53,24 @@ jobs:
     inputs:
       command: push
       packagesToPush: $(System.DefaultWorkingDirectory)/bin/*.nupkg
-      publishVstsFeed: public/Xamarin.Android
+      nuGetFeedType: external
+      publishFeedCredentials: xamarin-impl public feed
     condition: and(succeeded(), eq(variables['PushToFeed'], 'true'))
 
-  - task: PublishPipelineArtifact@1
+  - task: CopyFiles@2
+    displayName: copy SignList.xml to artifact
+    inputs:
+      Contents: SignList.xml
+      TargetFolder: $(System.DefaultWorkingDirectory)/bin
+
+  - task: PublishBuildArtifacts@1
     displayName: publish output
     inputs:
-      targetPath: $(System.DefaultWorkingDirectory)/bin
+      pathToPublish: $(System.DefaultWorkingDirectory)/bin
       artifactName: Xamarin.Android.FSharp.ResourceProvider
     condition: succeededOrFailed()
+
+- template: sign-artifacts/jobs/v2.yml@templates
+  parameters:
+    artifactName: Xamarin.Android.FSharp.ResourceProvider
+    dependsOn: [ 'build' ]
