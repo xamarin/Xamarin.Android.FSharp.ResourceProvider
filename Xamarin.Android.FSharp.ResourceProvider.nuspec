@@ -4,18 +4,21 @@
         <id>Xamarin.Android.FSharp.ResourceProvider</id>
         <version>1.0.1</version>
         <title>Xamarin.Android.FSharp.ResourceProvider</title>
-        <authors>Xamarin</authors>
-        <owners>Xamarin</owners>
+        <authors>Microsoft</authors>
+        <owners>Microsoft</owners>
         <references>
           <reference file="Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" />
         </references>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>Android resource Type Provider</description>
-        <copyright>MIT License</copyright>
+        <copyright>© Microsoft Corporation. All rights reserved.</copyright>
         <language>en-US</language>
+        <projectUrl>https://github.com/xamarin/Xamarin.Android.FSharp.ResourceProvider</projectUrl>
+        <license type="file">LICENSE</license>
     </metadata>
     <files>
         <file src="bin/Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" target="lib/monoandroid81/Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" />
         <file src="bin/Xamarin.Android.FSharp.ResourceProvider.dll" target="lib/monoandroid81/Xamarin.Android.FSharp.ResourceProvider.dll" />
+        <file src="LICENSE" target="" />
     </files>
 </package>
