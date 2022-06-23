@@ -2,12 +2,14 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>Xamarin.Android.FSharp.ResourceProvider</id>
-        <version>1.0.1</version>
+        <version>1.0.2</version>
         <title>Xamarin.Android.FSharp.ResourceProvider</title>
         <authors>Microsoft</authors>
         <owners>Microsoft</owners>
         <references>
-          <reference file="Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" />
+          <group targetFramework="MonoAndroid8.1">
+            <reference file="Xamarin.Android.FSharp.ResourceProvider.Runtime.dll" />
+          </group>
         </references>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>Android resource Type Provider</description>
