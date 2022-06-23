@@ -11,5 +11,4 @@
     <Compile Include="ResourceTypeProvider.fs" />
     <EmbeddedResource Include="Resource.designer.cs" />
   </ItemGroup>
-
 </Project>
