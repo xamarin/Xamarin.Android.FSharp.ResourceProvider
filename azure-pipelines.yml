@@ -17,6 +17,8 @@ resources:
 variables:
   - group: Xamarin-Secrets
   - group: Xamarin Release
+  - name: Codeql.Enabled
+    value: True
 
 jobs:
 - job: build
