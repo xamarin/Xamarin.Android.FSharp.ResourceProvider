@@ -35,7 +35,7 @@ jobs:
 
   - task: NuGetToolInstaller@1
     inputs:
-      versionSpec: 5.x
+      versionSpec: 6.x
 
   - task: MSBuild@1
     displayName: msbuild Xamarin.Android.FSharp.ResourceProvider.sln
@@ -94,7 +94,7 @@ jobs:
 
   - task: NuGetToolInstaller@1
     inputs:
-      versionSpec: 5.x
+      versionSpec: 6.x
 
   - task: CodeQL3000Init@0
     displayName: CodeQL 3000 Init
