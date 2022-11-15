@@ -17,17 +17,14 @@ resources:
 variables:
   - group: Xamarin-Secrets
   - group: Xamarin Release
-  - name: Codeql.Enabled
-    value: True
 
 jobs:
 - job: build
-  displayName: Build
+  displayName: Build macOS
   timeoutInMinutes: 60
-  cancelTimeoutInMinutes: 2
 
   pool:
-    vmImage: macOS-10.15
+    vmImage: macOS-latest
 
   workspace:
     clean: all
@@ -76,3 +73,38 @@ jobs:
   parameters:
     artifactName: Xamarin.Android.FSharp.ResourceProvider
     dependsOn: [ 'build' ]
+
+- job: build_windows
+  displayName: Build Windows
+  timeoutInMinutes: 90
+  pool:
+    vmImage: macOS-latest
+  workspace:
+    clean: all
+  variables:
+  - name: Codeql.Enabled
+    value: true
+  steps:
+  - checkout: self
+    clean: true
+
+  - task: MSBuild@1
+    displayName: msbuild Xamarin.Android.FSharp.ResourceProvider.sln
+    inputs:
+      solution: $(System.DefaultWorkingDirectory)/Xamarin.Android.FSharp.ResourceProvider.sln
+      msbuildArguments: /restore /bl:$(System.DefaultWorkingDirectory)/bin/build.binlog
+      configuration: Release
+
+  - task: NuGetCommand@2
+    displayName: pack nupkg
+    inputs:
+      command: pack
+      packagesToPack: $(System.DefaultWorkingDirectory)/Xamarin.Android.FSharp.ResourceProvider.nuspec
+      packDestination: $(System.DefaultWorkingDirectory)/bin/
+
+  - task: PublishBuildArtifacts@1
+    displayName: publish binlog
+    inputs:
+      pathToPublish: $(System.DefaultWorkingDirectory)/bin/build.binlog
+      artifactName: Windows binlog
+    condition: succeededOrFailed()
