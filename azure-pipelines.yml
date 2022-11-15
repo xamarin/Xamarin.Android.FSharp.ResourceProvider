@@ -78,7 +78,7 @@ jobs:
   displayName: Build Windows
   timeoutInMinutes: 90
   pool:
-    vmImage: macOS-latest
+    vmImage: windows-latest
   workspace:
     clean: all
   variables:
