@@ -33,6 +33,10 @@ jobs:
   - checkout: self
     clean: true
 
+  - task: NuGetToolInstaller@1
+    inputs:
+      versionSpec: 5.x
+
   - task: MSBuild@1
     displayName: msbuild Xamarin.Android.FSharp.ResourceProvider.sln
     inputs:
@@ -88,9 +92,13 @@ jobs:
   - checkout: self
     clean: true
 
+  - task: NuGetToolInstaller@1
+    inputs:
+      versionSpec: 5.x
+
   - task: CodeQL3000Init@0
     displayName: CodeQL 3000 Init
-    condition: and(succeeded(), eq(variables['Codeql.Enabled'], 'true'), eq(variables['Build.SourceBranch'], 'refs/heads/dev/pjc/cqltest'))
+    #condition: and(succeeded(), eq(variables['Codeql.Enabled'], 'true'), eq(variables['Build.SourceBranch'], 'refs/heads/dev/pjc/cqltest'))
 
   - task: MSBuild@1
     displayName: msbuild Xamarin.Android.FSharp.ResourceProvider.sln
@@ -108,7 +116,8 @@ jobs:
 
   - task: CodeQL3000Finalize@0
     displayName: CodeQL 3000 Finalize
-    condition: and(succeededOrFailed(), eq(variables['Codeql.Enabled'], 'true'), eq(variables['Build.SourceBranch'], 'refs/heads/dev/pjc/cqltest'))
+    condition: succeededOrFailed()
+    #condition: and(succeededOrFailed(), eq(variables['Codeql.Enabled'], 'true'), eq(variables['Build.SourceBranch'], 'refs/heads/dev/pjc/cqltest'))
 
   - task: PublishBuildArtifacts@1
     displayName: publish binlog
