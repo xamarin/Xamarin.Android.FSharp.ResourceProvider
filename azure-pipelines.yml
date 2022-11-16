@@ -78,7 +78,7 @@ jobs:
   displayName: Build Windows
   timeoutInMinutes: 90
   pool:
-    vmImage: windows-latest
+    vmImage: windows-2019
   workspace:
     clean: all
   variables:
